@@ -10,6 +10,13 @@ SYM_X="[${CL_RED}✗${CL_BLANK}]"
 SYM_QUESTION="[${CL_YELLOW}?${CL_BLANK}]"
 SYM_INFO="[i]"
 
+# Global variables
+
+PKGMAN=apt
+WEBROOT=/var/www/html/
+PHPUSER=null
+BLOCKPAGE_REPO_URL=https://github.com/pipass/blockpage.git
+
 # Function declarations
 
 command_exists() {
@@ -32,8 +39,8 @@ update_system() {
     if [ "$PKGMAN" = "apt" ]; then
     	sudo apt update > pipass-install-stdout.log 2> pipass-install-err.log;
 	    sudo apt -y upgrade > pipass-install-stdout.log 2> pipass-install-err.log;
-    else
-    	printf "We don't know what your PKGMAN is.";
+    elif [ "$PKGMAN" = "dnf" ]; then
+        sudo dnf -y update > pipass-install-stdout.log 2> pipass-install-err.log;
     fi
 }
 
@@ -79,14 +86,50 @@ dependencies_install() {
             sudo dnf install -y php-curl > pipass-install-stdout.log 2> pipass-install-err.log;
         fi
     fi
+
+    # curl
+    if command_exists curl; then
+        printf "${SYM_CHECK} curl is installed.\\n"
+    else
+        printf "${SYM_X} curl is not installed.\\n"
+            if [ "$PKGMAN" = "apt" ]; then
+	            sudo apt install -y curl > pipass-install-stdout.log 2> pipass-install-err.log;
+            elif [ "$PKGMAN" = "dnf" ]; then
+                sudo dnf install -y curl > pipass-install-stdout.log 2> pipass-install-err.log;
+            fi
+    fi
+}
+
+install_to_webroot() {
+    if [[ $(ls $WEBROOT | grep index) ]]; then
+        printf "${SYM_X} ${CL_RED}FATAL:${CL_BLANK} Index files have been detected in webroot directory $WEBROOT. To prevent data loss, the installer has exited. Please manually remove those files and re-run the installer.\\n" 
+        exit 1;
+    else
+        printf "${SYM_INFO} Downloading PiPass files to your system.\\n"
+        cd $WEBROOT
+        sudo git init
+        sudo git remote add -t \* -f origin $BLOCKPAGE_REPO_URL
+        sudo git pull origin master
+        printf "${SYM_CHECK} PiPass has been cloned to your webroot directory.\\n"
+        move_to_latest_tag;
+    fi
+}
+
+move_to_latest_tag() {
+    VERSION=$(curl https://raw.githubusercontent.com/PiPass/bin/master/currentversion)
+    printf "${SYM_INFO} Checking out latest stable version $VERSION.\\n"
+    cd $WEBROOT
+    sudo git checkout tags/v$VERSION
+    printf "${SYM_CHECK} Latest stable version $VERSION checked out.\\n"
 }
 
 if [[ $EUID -ne 0 ]]; then
    printf "${SYM_X} ${CL_RED}FATAL:${CL_BLANK} The installer must be run with root permissions\\n" 
-   exit 1
+   exit 1;
 fi
 
 while true; do
+    printf "\\n"
     read -p "To ensure compatibility, the system should be updated. Is this ok? [Y/n] " yn
     case $yn in
         [Yy]* ) update_system; break;;
@@ -96,7 +139,8 @@ while true; do
 done
 
 while true; do
-    read -p "The installer will now check for and automatically install necessary dependencies. Is this ok? [Y/n] " yn
+    printf "\\n"
+    read -p "The installer will now check for and install dependencies. Is this ok? [Y/n] " yn
     case $yn in
         [Yy]* ) dependencies_install; break;;
         [Nn]* ) break;;
@@ -104,3 +148,19 @@ while true; do
     esac
 done
 
+if [ -d "$WEBROOT" ]; then
+    printf "\\n"
+    read -p "We think that your webroot is $WEBROOT and will install there. Is this ok? [Y/n] " yn
+    while true; do
+        case $yn in
+            [Yy]* ) install_to_webroot; break;;
+            [Nn]* ) exit;;
+            * ) install_to_webroot; break;;
+        esac
+    done
+else
+    printf "${SYM_INFO} ${CL_YELLOW}WARN:${CL_BLANK} We couldn't reliabliy determine your webroot. Please manually modify the \"WEBROOT\" variable in the script and re-run. Sometimes, this can happen if there is no webserver installed. The installer will exit now.\\n"
+    exit;
+fi
+
+printf "${SYM_INFO} The installer will now perform final actions to ensure PiPass operates correctly.\\n"
