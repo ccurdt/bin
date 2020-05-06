@@ -10,12 +10,17 @@ SYM_X="[${CL_RED}✗${CL_BLANK}]"
 SYM_QUESTION="[${CL_YELLOW}?${CL_BLANK}]"
 SYM_INFO="[i]"
 
+# Stop wildcard expansion for sudoers
+
+set -f
+
 # Global variables
 
 PKGMAN=apt
 WEBROOT=/var/www/html/
-PHPUSER=null
+PHPUSER=www-data
 BLOCKPAGE_REPO_URL=https://github.com/pipass/blockpage.git
+SUDOERSLINE="${PHPUSER} ALL=(ALL) NOPASSWD: /usr/local/bin/pihole -w *, /usr/local/bin/pihole -w -d *"
 
 # Function declarations
 
@@ -102,7 +107,7 @@ dependencies_install() {
 
 install_to_webroot() {
     if [[ $(ls $WEBROOT | grep index) ]]; then
-        printf "${SYM_X} ${CL_RED}FATAL:${CL_BLANK} Index files have been detected in webroot directory $WEBROOT. To prevent data loss, the installer has exited. Please manually remove those files and re-run the installer.\\n" 
+        printf "${SYM_X} ${CL_RED}FATAL:${CL_BLANK} Index files have been detected in webroot directory $WEBROOT. To prevent data loss, the installer has exited. Please manually remove those files and re-run the installer.\\n"
         exit 1;
     else
         printf "${SYM_INFO} Downloading PiPass files to your system.\\n"
@@ -124,7 +129,7 @@ move_to_latest_tag() {
 }
 
 if [[ $EUID -ne 0 ]]; then
-   printf "${SYM_X} ${CL_RED}FATAL:${CL_BLANK} The installer must be run with root permissions\\n" 
+   printf "${SYM_X} ${CL_RED}FATAL:${CL_BLANK} The installer must be run with root permissions\\n"
    exit 1;
 fi
 
@@ -163,4 +168,17 @@ else
     exit;
 fi
 
-printf "${SYM_INFO} The installer will now perform final actions to ensure PiPass operates correctly.\\n"
+if [[ $(ps aux | grep -v 'grep' | grep ${PHPUSER}) ]]; then
+  printf "${SYM_INFO} We think that the php user is ${PHPUSER}, but this is just a guess. Please update the PHPUSER variable in this file if this is wrong.\\n"
+else
+  # We don't know who PHP is running as. Taking a wild guess, it's probably the current user.
+  PHPUSER=$(php -r 'echo exec("whoami");')
+  printf "${SYM_INFO} We think that the php user is ${PHPUSER}, but this is just a guess. Please update the PHPUSER variable in this file if this is wrong, and modify the sudoers file accordingly.\\n"
+fi
+
+if [ -z "$(sudo cat /etc/sudoers | grep /usr/local/bin/pihole)" ]; then
+  echo ${SUDOERSLINE} | sudo tee -a /etc/sudoers
+  printf "${SYM_CHECK} sudoers line added successfully.\\n"
+else
+  printf "${SYM_INFO} sudoers line already exists. No need to add again.\\n"
+fi
