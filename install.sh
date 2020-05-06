@@ -189,7 +189,7 @@ if [ -f /etc/lighttpd/lighttpd.conf ]; then
   printf "${SYM_INFO} Backed up lighttpd configuration to lighttpd.conf.pipass.bak.\\n"
   sudo sed -i /etc/lighttpd/lighttpd.conf -re 's/(server.error-handler-404[^"]*")([^"]*)(")/\1index\.php\3/'
 
-  printf "${SYM_CHECK} Successfully modified lighttpd configuration for 404 redirects"
+  printf "${SYM_CHECK} Successfully modified lighttpd configuration for 404 redirects.\\n"
 else
   printf "${SYM_INFO} lighttpd installation not found. Please configure 404 redirects for your webserver manually.\\n"
   ERR=true
