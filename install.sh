@@ -182,3 +182,32 @@ if [ -z "$(sudo cat /etc/sudoers | grep /usr/local/bin/pihole)" ]; then
 else
   printf "${SYM_INFO} sudoers line already exists. No need to add again.\\n"
 fi
+
+# Lighttpd 404 configuration
+if [ -f /etc/lighttpd/lighttpd.conf ]; then
+  sudo cp /etc/lighttpd/lighttpd.conf /etc/lighttpd/lighttpd.conf.pipass.bak
+  printf "${SYM_INFO} Backed up lighttpd configuration to lighttpd.conf.pipass.bak.\\n"
+  sudo sed -i /etc/lighttpd/lighttpd.conf -re 's/(server.error-handler-404[^"]*")([^"]*)(")/\1index\.php\3/'
+
+  printf "${SYM_CHECK} Successfully modified lighttpd configuration for 404 redirects"
+else
+  printf "${SYM_INFO} lighttpd installation not found. Please configure 404 redirects for your webserver manually.\\n"
+  ERR=true
+fi
+
+# Pi-Hole BLOCKINGMODE configuration
+if [ -f /etc/pihole/pihole-FTL.conf ]; then
+  sudo cp /etc/pihole/pihole-FTL.conf /etc/pihole/pihole-FTL.conf.pipass.bak
+  printf "${SYM_INFO} Backed up Pi-Hole configuration to pihole-FTL.conf.pipass.bak.\\n"
+
+  sudo sed -i '/^BLOCKINGMODE=/{h;s/=.*/=IP/};${x;/^$/{s//BLOCKINGMODE=IP/;H};x}' /etc/pihole/pihole-FTL.conf
+else
+  printf "${SYM_X} Unable to detect Pi-Hole configuration file. Are you sure Pi-Hole is installed?\\n"
+  ERR=true
+fi
+
+if [ -z ${ERR} ]; then
+  printf "${SYM_CHECK}${CL_GREEN} PiPass installation completed without significant errors.\\n"
+else
+  printf "${SYM_CHECK}${CL_YELLOW} PiPass installation completed with warnings. See the log above for more info and make a new post on the forum if you need help.\\n"
+fi
