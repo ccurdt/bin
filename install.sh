@@ -76,7 +76,7 @@ dependencies_install() {
 
     # php7.3/4-curl
     if [ "$PKGMAN" = "apt" ]; then
-        if dpkg --get-selections | egrep "php7.3-curl|php-7.4-curl" > pipass-install-stdout.log 2> pipass-install-err.log; then
+	    if (apt list --installed | grep php-curl) > pipass-install-stdout.log 2> pipass-install-err.log; then
             printf "${SYM_CHECK} php-curl is installed.\\n"
         else
             printf "${SYM_X} php-curl is not installed.\\n"
@@ -107,7 +107,7 @@ dependencies_install() {
 
 install_to_webroot() {
     if [[ $(ls $WEBROOT | grep index) ]]; then
-        printf "${SYM_X} ${CL_RED}FATAL:${CL_BLANK} Index files have been detected in webroot directory $WEBROOT. To prevent data loss, the installer has exited. Please manually remove those files and re-run the installer.\\n"
+        printf "${SYM_X} ${CL_RED}FATAL:${CL_BLANK} Index files have been detected in webroot directory $WEBROOT. You may also see this message if PiPass is already installed. To prevent data loss, the installer has exited. Please manually remove those files and re-run the installer.\\n"
         exit 1;
     else
         printf "${SYM_INFO} Downloading PiPass files to your system.\\n"
