@@ -128,6 +128,17 @@ move_to_latest_tag() {
     printf "${SYM_CHECK} Latest stable version $VERSION checked out.\\n"
 }
 
+copy_sample_config() {
+    CFPATH=${WEBROOT}config.php
+    if test -f "$CFPATH"; then
+        printf "${SYM_INFO} ${CL_YELLOW}WARN:${CL_BLANK} The config file ${CFPATH} already exists and we do not want to overwrite it. Please manually copy the default to that path if you want to use the new version.\\n"
+    else
+        CFDEPATH=${WEBROOT}config-sample.php
+        sudo cp ${CFDEPATH} ${CFPATH}
+        printf "${SYM_CHECK} Installed a new default configuration file.\\n"
+    fi
+}
+
 if [[ $EUID -ne 0 ]]; then
    printf "${SYM_X} ${CL_RED}FATAL:${CL_BLANK} The installer must be run with root permissions\\n"
    exit 1;
@@ -167,6 +178,8 @@ else
     printf "${SYM_INFO} ${CL_YELLOW}WARN:${CL_BLANK} We couldn't reliabliy determine your webroot. Please manually modify the \"WEBROOT\" variable in the script and re-run. Sometimes, this can happen if there is no webserver installed. The installer will exit now.\\n"
     exit;
 fi
+
+copy_sample_config;
 
 if [[ $(ps aux | grep -v 'grep' | grep ${PHPUSER}) ]]; then
   printf "${SYM_INFO} We think that the php user is ${PHPUSER}, but this is just a guess. Please update the PHPUSER variable in this file if this is wrong.\\n"
