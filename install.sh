@@ -128,15 +128,9 @@ move_to_latest_tag() {
     printf "${SYM_CHECK} Latest stable version $VERSION checked out.\\n"
 }
 
-copy_sample_config() {
-    CFPATH=${WEBROOT}config.php
-    if test -f "$CFPATH"; then
-        printf "${SYM_INFO} ${CL_YELLOW}WARN:${CL_BLANK} The config file ${CFPATH} already exists and we do not want to overwrite it. Please manually copy the default to that path if you want to use the new version.\\n"
-    else
-        CFDEPATH=${WEBROOT}config-sample.php
-        sudo cp ${CFDEPATH} ${CFPATH}
-        printf "${SYM_CHECK} Installed a new default configuration file.\\n"
-    fi
+restart_pihole_ftl() {
+    printf "${SYM_INFO} Restarting pihole-FTL.service. This shouldn't take long.\\n"
+    sudo pihole restartdns
 }
 
 if [[ $EUID -ne 0 ]]; then
@@ -179,8 +173,6 @@ else
     exit;
 fi
 
-copy_sample_config;
-
 if [[ $(ps aux | grep -v 'grep' | grep ${PHPUSER}) ]]; then
   printf "${SYM_INFO} We think that the php user is ${PHPUSER}, but this is just a guess. Please update the PHPUSER variable in this file if this is wrong.\\n"
 else
@@ -218,6 +210,17 @@ else
   printf "${SYM_X} Unable to detect Pi-Hole configuration file. Are you sure Pi-Hole is installed?\\n"
   ERR=true
 fi
+
+while true; do
+    printf "\\n"
+    read -p "To complete installation, pihole-FTL.service should be restarted. Is this ok? [Y/n] " yn
+    case $yn in
+        [Yy]* ) restart_pihole_ftl; break;;
+        [Nn]* ) break;;
+        * ) restart_pihole_ftl; break;;
+    esac
+done
+
 
 if [ -z ${ERR} ]; then
   printf "${SYM_CHECK}${CL_GREEN} PiPass installation completed without significant errors.\\n"
