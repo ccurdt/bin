@@ -13,8 +13,8 @@ SYM_INFO="[i]"
 # Global variables
 
 PKGMAN=apt
-WEBROOT=/var/www/html/
-BLOCKPAGE_REPO_URL=https://github.com/pipass/blockpage.git
+WEBROOT=/var/www/html/pihole/
+BLOCKPAGE_REPO_URL=https://github.com/ccurdt/blockpage.git
 
 # Function declarations
 
@@ -117,7 +117,7 @@ update_pipass() {
     sudo git reset --hard
     printf "${SYM_CHECK} Forcibly removed local changes to source code and updated to current version tagged upstream copy.\\n"
 
-    VERSION=$(curl https://raw.githubusercontent.com/PiPass/bin/master/currentversion)
+    VERSION=$(curl https://raw.githubusercontent.com/ccurdt/bin/master/currentversion)
     printf "${SYM_INFO} The latest stable version is $VERSION.\\n"
     
     printf "${SYM_INFO} Downloading lastest source code from upstream.\\n"
