@@ -17,9 +17,9 @@ set -f
 # Global variables
 
 PKGMAN=apt
-WEBROOT=/var/www/html/
+WEBROOT=/var/www/html/pihole/
 PHPUSER=www-data
-BLOCKPAGE_REPO_URL=https://github.com/pipass/blockpage.git
+BLOCKPAGE_REPO_URL=https://github.com/ccurdt/blockpage.git
 SUDOERSLINE="${PHPUSER} ALL=(ALL) NOPASSWD: /usr/local/bin/pihole -w *, /usr/local/bin/pihole -w -d *"
 
 # Function declarations
@@ -121,7 +121,7 @@ install_to_webroot() {
 }
 
 move_to_latest_tag() {
-    VERSION=$(curl https://raw.githubusercontent.com/PiPass/bin/master/currentversion)
+    VERSION=$(curl https://raw.githubusercontent.com/ccurdt/bin/master/currentversion)
     printf "${SYM_INFO} Checking out latest stable version $VERSION.\\n"
     cd $WEBROOT
     sudo git checkout tags/v$VERSION
